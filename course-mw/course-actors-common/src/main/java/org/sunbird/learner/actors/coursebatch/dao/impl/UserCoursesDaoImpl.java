@@ -1,6 +1,8 @@
 package org.sunbird.learner.actors.coursebatch.dao.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.*;
+import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.sunbird.cassandra.CassandraOperation;
 import org.sunbird.common.models.response.Response;
@@ -11,9 +13,6 @@ import org.sunbird.learner.actors.coursebatch.dao.UserCoursesDao;
 import org.sunbird.learner.util.Util;
 import org.sunbird.models.user.courses.UserCourses;
 
-import java.util.*;
-import java.util.stream.Collectors;
-
 public class UserCoursesDaoImpl implements UserCoursesDao {
 
   private CassandraOperation cassandraOperation = ServiceFactory.getInstance();
@@ -21,12 +20,9 @@ public class UserCoursesDaoImpl implements UserCoursesDao {
   static UserCoursesDao userCoursesDao;
   private static final String KEYSPACE_NAME =
       Util.dbInfoMap.get(JsonKey.LEARNER_COURSE_DB).getKeySpace();
-  private static final String KEY_SPACE_NAME =
-          Util.dbInfoMap.get(JsonKey.USER).getKeySpace();
   private static final String TABLE_NAME =
       Util.dbInfoMap.get(JsonKey.LEARNER_COURSE_DB).getTableName();
   private static final String USER_ENROLMENTS = Util.dbInfoMap.get(JsonKey.USER_ENROLMENTS_DB).getTableName();
-  private static final String USER = Util.dbInfoMap.get(JsonKey.USER).getTableName();
   public static UserCoursesDao getInstance() {
     if (userCoursesDao == null) {
       userCoursesDao = new UserCoursesDaoImpl();
@@ -139,65 +135,13 @@ public class UserCoursesDaoImpl implements UserCoursesDao {
   }
 
   @Override
-  public List<Map<String, Object>> getBatchParticipantsDetails(RequestContext requestContext, String batchId, boolean active) {
-    Map<String, Object> queryMap = new HashMap<>();
-    queryMap.put(JsonKey.BATCH_ID, batchId);
-    Response response =
-            cassandraOperation.getRecordByIndexedPropertyPagination(KEYSPACE_NAME, USER_ENROLMENTS, queryMap, requestContext);
-        /*cassandraOperation.getRecords(
-                requestContext, KEYSPACE_NAME, USER_ENROLMENTS, queryMap, Arrays.asList(JsonKey.USER_ID, JsonKey.ACTIVE));*/
-    List<Map<String, Object>> userCoursesList =
-            (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
-    if (CollectionUtils.isEmpty(userCoursesList)) {
-      return null;
-    }
-    return userCoursesList
-            .stream()
-            .filter(userCourse -> (active == (boolean) userCourse.get(JsonKey.ACTIVE)))
-            .collect(Collectors.toList());
-  }
-
-  @Override
-  public List<Map<String, Object>> getCourseParticipantDetails(RequestContext requestContext, String courseId, boolean active) {
-    Map<String, Object> queryMap = new HashMap<>();
-    queryMap.put(JsonKey.COURSE_ID, courseId);
-    Response response =
-            cassandraOperation.getRecordsByIndexedProperty(KEYSPACE_NAME, USER_ENROLMENTS, "courseid", courseId, requestContext);
-    List<Map<String, Object>> userCoursesList =
-            (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
-    if (CollectionUtils.isEmpty(userCoursesList)) {
-      return null;
-    }
-    return userCoursesList
-            .stream()
-            .filter(userCourse -> (active == (boolean) userCourse.get(JsonKey.ACTIVE)))
-            .collect(Collectors.toList());
-  }
-
-  @Override
-  public Optional<Map<String, Object>> getParticipantsDetails(RequestContext requestContext, String userId, boolean active) {
-    Map<String, Object> queryMap = new HashMap<>();
-      queryMap.put(JsonKey.USER_ID, userId);
-    Response response =
-            cassandraOperation.getRecordsByIndexedProperty(KEY_SPACE_NAME, USER, "userid", userId, requestContext);
-    List<Map<String, Object>> userDetailsList =
-            (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
-    if (CollectionUtils.isEmpty(userDetailsList)) {
-      return null;
-    }
-    return userDetailsList
-            .stream()
-            .findFirst();
-  }
-
-  @Override
   public List<Map<String, Object>> listEnrolments(RequestContext requestContext, String userId, List<String> courseIdList) {
     Map<String, Object> primaryKey = new HashMap<>();
     primaryKey.put(JsonKey.USER_ID, userId);
     if(!CollectionUtils.isEmpty(courseIdList)){
       primaryKey.put(JsonKey.COURSE_ID_KEY, courseIdList);
     }
-    Response response = cassandraOperation.getRecordByIdentifier(requestContext, KEYSPACE_NAME, USER_ENROLMENTS, primaryKey, new ArrayList<>());
+    Response response = cassandraOperation.getRecordByIdentifier(requestContext, KEYSPACE_NAME, USER_ENROLMENTS, primaryKey, null);
     List<Map<String, Object>> userCoursesList = (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
     if (CollectionUtils.isEmpty(userCoursesList)) {
       return null;
@@ -205,5 +149,4 @@ public class UserCoursesDaoImpl implements UserCoursesDao {
       return userCoursesList;
     }
   }
-
 }
