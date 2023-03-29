@@ -425,7 +425,9 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
   public Response getRecordByIdentifier(
           RequestContext requestContext, String keyspaceName, String tableName, Object key, List<String> fields) {
     long startTime = System.currentTimeMillis();
-    logger.debug(requestContext, "Cassandra Service getRecordBy key method started at ==" + startTime);
+    logger.info(requestContext, "Cassandra Service getRecordBy key method started at ==" + startTime);
+    logger.info(requestContext, "Cassandra Service getRecordBy key method Keyspace ==" + keyspaceName
+            + "--- table name --- "+ tableName+ " --- Key --- "+keyspaceName+" --- fields ----"+ fields.toString());
     Response response = new Response();
     try {
       Session session = connectionManager.getSession(keyspaceName);
@@ -449,9 +451,10 @@ public abstract class CassandraOperationImpl implements CassandraOperation {
                   CassandraUtil.createQuery(x.getKey(), x.getValue(), selectWhere);
                 });
       }
-      logger.debug(requestContext, selectWhere.getQueryString());
+      logger.info(requestContext, selectWhere.getQueryString());
       ResultSet results = session.execute(selectWhere);
       response = CassandraUtil.createResponse(results);
+      logger.info(requestContext, response.toString());
     } catch (Exception e) {
       logger.error(requestContext, Constants.EXCEPTION_MSG_FETCH + tableName + " : " + e.getMessage(), e);
       throw new ProjectCommonException(

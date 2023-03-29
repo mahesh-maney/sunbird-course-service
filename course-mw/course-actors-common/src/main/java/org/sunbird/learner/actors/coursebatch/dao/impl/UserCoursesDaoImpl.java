@@ -11,10 +11,7 @@ import org.sunbird.learner.actors.coursebatch.dao.UserCoursesDao;
 import org.sunbird.learner.util.Util;
 import org.sunbird.models.user.courses.UserCourses;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class UserCoursesDaoImpl implements UserCoursesDao {
@@ -200,7 +197,7 @@ public class UserCoursesDaoImpl implements UserCoursesDao {
     if(!CollectionUtils.isEmpty(courseIdList)){
       primaryKey.put(JsonKey.COURSE_ID_KEY, courseIdList);
     }
-    Response response = cassandraOperation.getRecordByIdentifier(requestContext, KEYSPACE_NAME, USER_ENROLMENTS, primaryKey, null);
+    Response response = cassandraOperation.getRecordByIdentifier(requestContext, KEYSPACE_NAME, USER_ENROLMENTS, primaryKey, new ArrayList<>());
     List<Map<String, Object>> userCoursesList = (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
     if (CollectionUtils.isEmpty(userCoursesList)) {
       return null;
