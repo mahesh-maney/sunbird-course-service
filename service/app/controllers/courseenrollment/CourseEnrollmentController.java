@@ -44,6 +44,7 @@ public class CourseEnrollmentController extends BaseController {
               validator.validateRequestedBy(userId);
               request.getContext().put(JsonKey.USER_ID, userId);
               request.getRequest().put(JsonKey.USER_ID, userId);
+              logger.info(null, "test commit");
 
               request
                   .getContext()
