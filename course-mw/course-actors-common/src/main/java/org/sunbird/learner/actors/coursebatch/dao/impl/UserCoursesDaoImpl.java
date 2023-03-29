@@ -13,6 +13,8 @@ import org.sunbird.learner.actors.coursebatch.dao.UserCoursesDao;
 import org.sunbird.learner.util.Util;
 import org.sunbird.models.user.courses.UserCourses;
 
+import static org.sunbird.common.models.util.JsonKey.USER;
+
 public class UserCoursesDaoImpl implements UserCoursesDao {
 
   private CassandraOperation cassandraOperation = ServiceFactory.getInstance();
@@ -20,6 +22,9 @@ public class UserCoursesDaoImpl implements UserCoursesDao {
   static UserCoursesDao userCoursesDao;
   private static final String KEYSPACE_NAME =
       Util.dbInfoMap.get(JsonKey.LEARNER_COURSE_DB).getKeySpace();
+
+  private static final String KEY_SPACE_NAME =
+          Util.dbInfoMap.get(USER).getKeySpace();
   private static final String TABLE_NAME =
       Util.dbInfoMap.get(JsonKey.LEARNER_COURSE_DB).getTableName();
   private static final String USER_ENROLMENTS = Util.dbInfoMap.get(JsonKey.USER_ENROLMENTS_DB).getTableName();
@@ -148,5 +153,49 @@ public class UserCoursesDaoImpl implements UserCoursesDao {
     } else {
       return userCoursesList;
     }
+  }
+
+  /**
+   *
+   * @param requestContext
+   * @param courseId
+   * @param active
+   * @return
+   */
+  @Override
+  public List<Map<String, Object>> getCourseParticipantDetails(RequestContext requestContext, String courseId, boolean active) {
+    Map<String, Object> queryMap = new HashMap<>();
+    queryMap.put(JsonKey.COURSE_ID, courseId);
+    Response response =
+            cassandraOperation.getRecordsByIndexedProperty(KEYSPACE_NAME, USER_ENROLMENTS, "courseid", courseId, requestContext);
+    List<Map<String, Object>> userCoursesList =
+            (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
+    if (CollectionUtils.isEmpty(userCoursesList)) {
+      return null;
+    }
+    return userCoursesList
+            .stream()
+            .filter(userCourse -> (active == (boolean) userCourse.get(JsonKey.ACTIVE)))
+            .collect(Collectors.toList());
+  }
+
+  /**
+   * @param requestContext
+   * @param userId
+   * @param active
+   * @return
+   */
+  @Override
+  public List<Map<String, Object>> getParticipantsDetails(RequestContext requestContext, String userId, boolean active) {
+    Map<String, Object> queryMap = new HashMap<>();
+    queryMap.put(JsonKey.USER_ID, userId);
+    Response response =
+            cassandraOperation.getRecordsByIndexedProperty(KEY_SPACE_NAME, USER, "userid", userId, requestContext);
+    List<Map<String, Object>> userDetailsList =
+            (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
+    if (CollectionUtils.isEmpty(userDetailsList)) {
+      return null;
+    }
+    return userDetailsList;
   }
 }

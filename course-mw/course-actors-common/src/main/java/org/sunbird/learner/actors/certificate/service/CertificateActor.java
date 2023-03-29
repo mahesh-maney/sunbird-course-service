@@ -27,7 +27,8 @@ public class CertificateActor extends BaseActor {
 
   private static enum ResponseMessage {
     SUBMITTED("Certificates issue action for Course Batch Id {0} submitted Successfully!"),
-    FAILED("Certificates issue action for Course Batch Id {0} Failed!");
+    FAILED("Certificates issue action for Course Batch Id {0} Failed!"),
+    PIAA_SUBMITTED("Certificates will be issued for Course Batch Id {0} after evaluation ");
     private String value;
 
     private ResponseMessage(String value) {
@@ -147,5 +148,44 @@ public class CertificateActor extends BaseActor {
         });
     String topic = ProjectUtil.getConfigValue("kafka_topics_certificate_instruction");
     InstructionEventGenerator.pushInstructionEvent(batchId, topic, data);
+  }
+
+  private void issueCertificateForPIAA(Request request) {
+    logger.info(request.getRequestContext(), "issueCertificateForPIAA request=" + request.getRequest());
+    final String batchId = (String) request.getRequest().get(JsonKey.BATCH_ID);
+    final String courseId = (String) request.getRequest().get(JsonKey.COURSE_ID);
+    List<String> userIds = (List<String>) request.getRequest().get(JsonKey.USER_IDs);
+    final boolean reIssue = isReissue(request.getContext().get(CourseJsonKey.REISSUE));
+    Map<String, Object> courseBatchResponse =
+            CourseBatchUtil.validateCourseBatch(request.getRequestContext(), courseId, batchId);
+    if (null == courseBatchResponse.get("cert_templates")) {
+      ProjectCommonException.throwClientErrorException(
+              ResponseCode.CLIENT_ERROR, "No certificate templates associated with " + batchId);
+    }
+    Map<String, Object> courseDetailsResponse =
+            CourseBatchUtil.getCourseDetails(request.getRequestContext(), courseId);
+    Response response = new Response();
+    Map<String, Object> resultData = new HashMap<>();
+    if(courseDetailsResponse.get(JsonKey.PRIMARYCATEGORY).equals("PIAA Assessment")){
+      pushCertificateEvent(request, batchId, courseId, userIds, reIssue, response, resultData, MessageFormat.format(ResponseMessage.PIAA_SUBMITTED.getValue(), batchId));
+    }
+    sender().tell(response, self());
+  }
+
+  private void pushCertificateEvent(Request request, String batchId, String courseId, List<String> userIds, boolean reIssue,
+                                    Response response, Map<String, Object> resultData, String responseMessage) {
+    resultData.put(JsonKey.STATUS, responseMessage);
+    resultData.put(JsonKey.BATCH_ID, batchId);
+    resultData.put(JsonKey.COURSE_ID, courseId);
+    resultData.put(JsonKey.COLLECTION_ID, courseId);
+    response.put(JsonKey.RESULT, resultData);
+    try {
+      pushInstructionEvent(batchId, courseId, userIds, reIssue);
+    } catch (Exception e) {
+      logger.error(request.getRequestContext(), "issueCertificate pushInstructionEvent error for courseId="
+              + courseId + ", batchId=" + batchId, e);
+      resultData.put(
+              JsonKey.STATUS, MessageFormat.format(ResponseMessage.FAILED.getValue(), batchId));
+    }
   }
 }

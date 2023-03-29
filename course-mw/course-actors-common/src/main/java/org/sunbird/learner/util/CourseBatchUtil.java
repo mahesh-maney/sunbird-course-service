@@ -238,4 +238,17 @@ public class CourseBatchUtil {
     }
     return value;
   }
+
+  public static Map<String, Object> getCourseDetails(RequestContext requestContext, String courseId) {
+    Future<Map<String, Object>> resultCourseF =
+            esUtil.getDataByIdentifier(requestContext, EsType.courseCompositeSearch.getTypeName(), courseId);
+    Map<String, Object> resultCourse =
+            (Map<String, Object>) ElasticSearchHelper.getResponseFromFuture(resultCourseF);
+
+    if (MapUtils.isEmpty(resultCourse)) {
+      ProjectCommonException.throwClientErrorException(
+              ResponseCode.CLIENT_ERROR, "No such courseId exists");
+    }
+    return resultCourse;
+  }
 }

@@ -1013,5 +1013,13 @@ public final class JsonKey {
   public static final String GCP="gcloud";
   public static final String TEMPLATE_URL = "templateUrl";
   public static final String AUTH_ENABLED = "AuthenticationEnabled";
+  public static final String PAGE_NUM = "pageNum";
+  public static final String COMMENT = "comment";
+  public static final String USERS = "users";
+  public static final String ASSESSMENT_NAME = "Assessment Name";
+  public static final String COOKIE = "cookie";
+  public static final String SUNBIRD_CS_COMPOSITE_SEARCH_PATH = "sunbird_cs_composite_search_path";
+  public static final String  PRIMARYCATEGORY = "primaryCategory";
+
   private JsonKey() {}
 }
