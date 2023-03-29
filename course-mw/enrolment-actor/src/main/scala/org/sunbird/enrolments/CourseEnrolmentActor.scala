@@ -418,7 +418,7 @@ class CourseEnrolmentActor @Inject()(@Named("course-batch-notification-actor") c
 
     def getScoreByCourseIdUserId(value: AnyRef, userId: String): util.Map[String, AnyRef] = {
         new util.HashMap[String, AnyRef]()
-        userCoursesDao.
+
 
     }
 
